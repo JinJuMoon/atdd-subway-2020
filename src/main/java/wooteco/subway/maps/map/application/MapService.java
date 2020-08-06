@@ -21,6 +21,7 @@ import wooteco.subway.maps.map.dto.PathResponseAssembler;
 import wooteco.subway.maps.station.application.StationService;
 import wooteco.subway.maps.station.domain.Station;
 import wooteco.subway.maps.station.dto.StationResponse;
+import wooteco.subway.members.member.domain.LoginMember;
 
 @Service
 @Transactional
@@ -46,20 +47,22 @@ public class MapService {
         return new MapResponse(lineResponses);
     }
 
-    public PathResponse findPath(Long source, Long target, PathType type) {
+    public PathResponse findPath(Long source, Long target, PathType type,
+        final LoginMember loginMember) {
         List<Line> allLines = lineService.findLines();
         SubwayPath subwayPath = pathService.findPath(allLines, source, target, type);
         Map<Long, Station> stations = stationService.findStationsByIds(subwayPath.extractStationId());
-        int totalFare = calculateFare(subwayPath);
+        int totalFare = calculateFare(subwayPath, loginMember.getAge());
 
         return PathResponseAssembler.assemble(subwayPath, stations, totalFare);
     }
 
-    public int calculateFare(final SubwayPath subwayPath) {
+    public int calculateFare(final SubwayPath subwayPath, final Integer age) {
         int distanceFare = calculateDistanceFare(subwayPath);
         int lineFare = lineService.findMostExpensiveFare(subwayPath.extractLineId());
+        int fare = Collections.max(Arrays.asList(distanceFare, lineFare));
 
-        return Collections.max(Arrays.asList(distanceFare, lineFare));
+        return discountByAge(age, fare);
     }
 
     private int calculateDistanceFare(final SubwayPath subwayPath) {
@@ -84,6 +87,18 @@ public class MapService {
                 .collect(Collectors.toList());
 
         return stationService.findStationsByIds(stationIds);
+    }
+
+    private int discountByAge(final Integer age, final int fare) {
+        if (13 <= age && age < 19) {
+            return (int)Math.floor((fare - 350) * 0.8);
+        }
+
+        if (6 <= age && age < 13) {
+            return (int)Math.floor((fare - 350) * 0.5);
+        }
+
+        return fare;
     }
 
     private List<LineStationResponse> extractLineStationResponses(Line line, Map<Long, Station> stations) {

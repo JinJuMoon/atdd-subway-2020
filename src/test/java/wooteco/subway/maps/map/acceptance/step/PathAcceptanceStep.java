@@ -1,22 +1,26 @@
 package wooteco.subway.maps.map.acceptance.step;
 
-import io.restassured.RestAssured;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
-import org.springframework.http.MediaType;
-import wooteco.subway.maps.map.dto.PathResponse;
-import wooteco.subway.maps.station.dto.StationResponse;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.http.MediaType;
+
+import io.restassured.RestAssured;
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
+import wooteco.security.core.TokenResponse;
+import wooteco.subway.maps.map.dto.PathResponse;
+import wooteco.subway.maps.station.dto.StationResponse;
 
 public class PathAcceptanceStep {
-    public static ExtractableResponse<Response> 거리_경로_조회_요청(String type, long source, long target) {
+    public static ExtractableResponse<Response> 거리_경로_조회_요청(final TokenResponse loginResponse,
+        String type, long source, long target) {
         return RestAssured.given().log().all().
                 accept(MediaType.APPLICATION_JSON_VALUE).
+                auth().oauth2(loginResponse.getAccessToken()).
                 when().
                 get("/paths?source={sourceId}&target={targetId}&type={type}", source, target, type).
                 then().

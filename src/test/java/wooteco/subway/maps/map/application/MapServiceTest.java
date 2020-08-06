@@ -3,6 +3,7 @@ package wooteco.subway.maps.map.application;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static wooteco.subway.common.TestObjectUtils.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import wooteco.subway.maps.map.dto.MapResponse;
 import wooteco.subway.maps.map.dto.PathResponse;
 import wooteco.subway.maps.station.application.StationService;
 import wooteco.subway.maps.station.domain.Station;
+import wooteco.subway.members.member.domain.LoginMember;
 
 @ExtendWith(MockitoExtension.class)
 public class MapServiceTest {
@@ -85,7 +87,7 @@ public class MapServiceTest {
         when(pathService.findPath(anyList(), anyLong(), anyLong(), any())).thenReturn(subwayPath);
         when(stationService.findStationsByIds(anyList())).thenReturn(stations);
 
-        PathResponse pathResponse = mapService.findPath(1L, 3L, PathType.DISTANCE);
+        PathResponse pathResponse = mapService.findPath(1L, 3L, PathType.DISTANCE,  createLoginMember(17));
 
         assertThat(pathResponse.getStations()).isNotEmpty();
         assertThat(pathResponse.getDuration()).isNotZero();
@@ -114,7 +116,9 @@ public class MapServiceTest {
             new LineStationEdge(lineStation2,1L)
         ));
 
-        assertThat(mapService.calculateFare(subwayPath)).isEqualTo(1250);
+        LoginMember loginMember = createLoginMember(25);
+
+        assertThat(mapService.calculateFare(subwayPath, loginMember.getAge())).isEqualTo(1250);
     }
 
     @DisplayName("10km 초과 50km 이하 경로의 요금을 계산한다.")
@@ -130,7 +134,9 @@ public class MapServiceTest {
             new LineStationEdge(lineStation3,1L)
         ));
 
-        assertThat(mapService.calculateFare(subwayPath)).isEqualTo(1450);
+        LoginMember loginMember = createLoginMember(25);
+
+        assertThat(mapService.calculateFare(subwayPath, loginMember.getAge())).isEqualTo(1450);
     }
 
     @DisplayName("50km 초과 경로의 요금을 계산한다.")
@@ -146,6 +152,8 @@ public class MapServiceTest {
             new LineStationEdge(lineStation3,1L)
         ));
 
-        assertThat(mapService.calculateFare(subwayPath)).isEqualTo(2050);
+        LoginMember loginMember = createLoginMember(25);
+
+        assertThat(mapService.calculateFare(subwayPath, loginMember.getAge())).isEqualTo(2050);
     }
 }
