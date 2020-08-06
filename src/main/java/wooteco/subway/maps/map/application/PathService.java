@@ -1,21 +1,28 @@
 package wooteco.subway.maps.map.application;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
+import org.jgrapht.alg.shortestpath.KShortestPaths;
+import org.springframework.stereotype.Service;
+
 import wooteco.subway.maps.line.domain.Line;
 import wooteco.subway.maps.map.domain.LineStationEdge;
 import wooteco.subway.maps.map.domain.PathType;
-import wooteco.subway.maps.map.domain.SubwayGraph;
+import wooteco.subway.maps.map.domain.SubwayGraphDijks;
+import wooteco.subway.maps.map.domain.SubwayGraphK;
 import wooteco.subway.maps.map.domain.SubwayPath;
-import org.jgrapht.GraphPath;
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PathService {
     public SubwayPath findPath(List<Line> lines, Long source, Long target, PathType type) {
-        SubwayGraph graph = new SubwayGraph(LineStationEdge.class);
+        if (type == PathType.ARRIVAL_TIME) {
+            return findPathByArrivalTime(lines, source, target, type);
+        }
+
+        SubwayGraphDijks graph = new SubwayGraphDijks(LineStationEdge.class);
         graph.addVertexWith(lines);
         graph.addEdge(lines, type);
 
@@ -24,6 +31,21 @@ public class PathService {
         GraphPath<Long, LineStationEdge> path = dijkstraShortestPath.getPath(source, target);
 
         return convertSubwayPath(path);
+    }
+
+    private SubwayPath findPathByArrivalTime(List<Line> lines, Long source, Long target, PathType type) {
+        SubwayGraphK graph = new SubwayGraphK(LineStationEdge.class);
+        graph.addVertexWith(lines);
+        graph.addEdge(lines, type);
+
+        List<GraphPath> paths = new KShortestPaths(graph, 1000).getPaths(source, target);
+        List<SubwayPath> subwayPaths = paths.stream().map(this::convertSubwayPath).collect(Collectors.toList());
+
+        return findBestPath(subwayPaths);
+    }
+
+    private SubwayPath findBestPath(final List<SubwayPath> subwayPaths) {
+        return subwayPaths.get(0);
     }
 
     private SubwayPath convertSubwayPath(GraphPath graphPath) {
