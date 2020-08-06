@@ -1,6 +1,23 @@
 package wooteco.subway.maps.map.application;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.google.common.collect.Lists;
+import wooteco.subway.common.TestObjectUtils;
 import wooteco.subway.maps.line.application.LineService;
 import wooteco.subway.maps.line.domain.Line;
 import wooteco.subway.maps.line.domain.LineStation;
@@ -11,20 +28,6 @@ import wooteco.subway.maps.map.dto.MapResponse;
 import wooteco.subway.maps.map.dto.PathResponse;
 import wooteco.subway.maps.station.application.StationService;
 import wooteco.subway.maps.station.domain.Station;
-import wooteco.subway.common.TestObjectUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class MapServiceTest {
@@ -98,5 +101,51 @@ public class MapServiceTest {
 
         assertThat(mapResponse.getLineResponses()).hasSize(3);
 
+    }
+
+    @DisplayName("10km 이하 경로의 요금을 계산한다.")
+    @Test
+    void calculateTotalFare() {
+        LineStation lineStation1 = new LineStation(1L, null, 0, 0);
+        LineStation lineStation2 = new LineStation(2L, 1L, 10, 4);
+
+        subwayPath = new SubwayPath(Arrays.asList(
+            new LineStationEdge(lineStation1,1L),
+            new LineStationEdge(lineStation2,1L)
+        ));
+
+        assertThat(mapService.calculateFare(subwayPath)).isEqualTo(1250);
+    }
+
+    @DisplayName("10km 초과 50km 이하 경로의 요금을 계산한다.")
+    @Test
+    void calculateTotalFareOverTen() {
+        LineStation lineStation1 = new LineStation(1L, null, 0, 0);
+        LineStation lineStation2 = new LineStation(2L, 1L, 10, 4);
+        LineStation lineStation3 = new LineStation(3L, 2L, 10, 5);
+
+        subwayPath = new SubwayPath(Arrays.asList(
+            new LineStationEdge(lineStation1,1L),
+            new LineStationEdge(lineStation2,1L),
+            new LineStationEdge(lineStation3,1L)
+        ));
+
+        assertThat(mapService.calculateFare(subwayPath)).isEqualTo(1450);
+    }
+
+    @DisplayName("50km 초과 경로의 요금을 계산한다.")
+    @Test
+    void calculateTotalFareOverFifty() {
+        LineStation lineStation1 = new LineStation(1L, null, 0, 0);
+        LineStation lineStation2 = new LineStation(2L, 1L, 30, 4);
+        LineStation lineStation3 = new LineStation(3L, 2L, 40, 5);
+
+        subwayPath = new SubwayPath(Arrays.asList(
+            new LineStationEdge(lineStation1,1L),
+            new LineStationEdge(lineStation2,1L),
+            new LineStationEdge(lineStation3,1L)
+        ));
+
+        assertThat(mapService.calculateFare(subwayPath)).isEqualTo(2050);
     }
 }

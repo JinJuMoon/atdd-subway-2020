@@ -1,6 +1,14 @@
 package wooteco.subway.maps.map.application;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import wooteco.subway.maps.line.application.LineService;
 import wooteco.subway.maps.line.domain.Line;
 import wooteco.subway.maps.line.dto.LineResponse;
@@ -13,11 +21,6 @@ import wooteco.subway.maps.map.dto.PathResponseAssembler;
 import wooteco.subway.maps.station.application.StationService;
 import wooteco.subway.maps.station.domain.Station;
 import wooteco.subway.maps.station.dto.StationResponse;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -44,11 +47,34 @@ public class MapService {
     }
 
     public PathResponse findPath(Long source, Long target, PathType type) {
-        List<Line> lines = lineService.findLines();
-        SubwayPath subwayPath = pathService.findPath(lines, source, target, type);
+        List<Line> allLines = lineService.findLines();
+        SubwayPath subwayPath = pathService.findPath(allLines, source, target, type);
         Map<Long, Station> stations = stationService.findStationsByIds(subwayPath.extractStationId());
+        int totalFare = calculateFare(subwayPath);
 
-        return PathResponseAssembler.assemble(subwayPath, stations);
+        return PathResponseAssembler.assemble(subwayPath, stations, totalFare);
+    }
+
+    public int calculateFare(final SubwayPath subwayPath) {
+        int distanceFare = calculateDistanceFare(subwayPath);
+        int lineFare = lineService.findMostExpensiveFare(subwayPath.extractLineId());
+
+        return Collections.max(Arrays.asList(distanceFare, lineFare));
+    }
+
+    private int calculateDistanceFare(final SubwayPath subwayPath) {
+        int defaultFare = 1250;
+        int overDistance = subwayPath.calculateDistance() - 10;
+
+        if (overDistance > 40) {
+            return defaultFare + (int) ((Math.ceil((overDistance - 1) / 8) + 1) * 100);
+        }
+
+        if (0 < overDistance) {
+            return defaultFare + (int) ((Math.ceil((overDistance - 1) / 5) + 1) * 100);
+        }
+
+        return defaultFare;
     }
 
     private Map<Long, Station> findStations(List<Line> lines) {

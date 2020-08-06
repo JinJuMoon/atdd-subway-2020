@@ -25,26 +25,17 @@ public class SubwayPath {
         return stationIds;
     }
 
+    public List<Long> extractLineId() {
+        return lineStationEdges.stream()
+            .map(LineStationEdge::getLineId)
+            .collect(Collectors.toList());
+    }
+
     public int calculateDuration() {
         return lineStationEdges.stream().mapToInt(it -> it.getLineStation().getDuration()).sum();
     }
 
     public int calculateDistance() {
         return lineStationEdges.stream().mapToInt(it -> it.getLineStation().getDistance()).sum();
-    }
-
-    public int calculateFare() {
-        int defaultFare = 1250;
-        int overDistance = calculateDistance() - 10;
-
-        if (overDistance > 40) {
-            return defaultFare + (int) ((Math.ceil((overDistance - 1) / 8) + 1) * 100);
-        }
-
-        if (0 < overDistance) {
-            return defaultFare + (int) ((Math.ceil((overDistance - 1) / 5) + 1) * 100);
-        }
-
-        return defaultFare;
     }
 }
