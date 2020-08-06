@@ -1,8 +1,10 @@
 import ApiService from '@/api'
 
+const BASE_URL = '/paths'
+
 const PathService = {
-  get() {
-    return ApiService.get()
+  get(searchingPath) {
+    return ApiService.get(`${BASE_URL}?source=${searchingPath.source}&target=${searchingPath.target}&type=${searchingPath.type}`);
   }
 }
 
