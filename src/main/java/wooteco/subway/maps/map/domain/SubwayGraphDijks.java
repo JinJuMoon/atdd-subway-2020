@@ -9,12 +9,13 @@ import wooteco.subway.maps.line.domain.Line;
 import wooteco.subway.maps.line.domain.LineStation;
 
 public class SubwayGraphDijks extends WeightedMultigraph<Long, LineStationEdge> {
-    public SubwayGraphDijks(Class edgeClass) {
+    public SubwayGraphDijks(Class edgeClass, List<Line> lines, PathType type) {
         super(edgeClass);
+        this.addVertexWith(lines);
+        this.addEdge(lines, type);
     }
 
-    public void addVertexWith(List<Line> lines) {
-        // 지하철 역(정점)을 등록
+    private void addVertexWith(List<Line> lines) {
         lines.stream()
                 .flatMap(it -> it.getStationInOrder().stream())
                 .map(it -> it.getStationId())
@@ -23,8 +24,7 @@ public class SubwayGraphDijks extends WeightedMultigraph<Long, LineStationEdge> 
                 .forEach(it -> addVertex(it));
     }
 
-    public void addEdge(List<Line> lines, PathType type) {
-        // 지하철 역의 연결 정보(간선)을 등록
+    private void addEdge(List<Line> lines, PathType type) {
         for (Line line : lines) {
             line.getStationInOrder().stream()
                     .filter(it -> it.getPreStationId() != null)

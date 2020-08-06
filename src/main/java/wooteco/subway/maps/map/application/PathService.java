@@ -19,25 +19,14 @@ import wooteco.subway.maps.map.domain.SubwayPath;
 public class PathService {
     public SubwayPath findPath(List<Line> lines, Long source, Long target, PathType type) {
         if (type == PathType.ARRIVAL_TIME) {
-            return findPathByArrivalTime(lines, source, target, type);
+            return findPathWithTime(lines, source, target, type);
         }
 
-        SubwayGraphDijks graph = new SubwayGraphDijks(LineStationEdge.class);
-        graph.addVertexWith(lines);
-        graph.addEdge(lines, type);
-
-        // 다익스트라 최단 경로 찾기
-        DijkstraShortestPath dijkstraShortestPath = new DijkstraShortestPath(graph);
-        GraphPath<Long, LineStationEdge> path = dijkstraShortestPath.getPath(source, target);
-
-        return convertSubwayPath(path);
+        return findPathWithoutTime(lines, source, target, type);
     }
 
-    private SubwayPath findPathByArrivalTime(List<Line> lines, Long source, Long target, PathType type) {
-        SubwayGraphK graph = new SubwayGraphK(LineStationEdge.class);
-        graph.addVertexWith(lines);
-        graph.addEdge(lines, type);
-
+    private SubwayPath findPathWithTime(List<Line> lines, Long source, Long target, PathType type) {
+        SubwayGraphK graph = new SubwayGraphK(LineStationEdge.class, lines, type);
         List<GraphPath> paths = new KShortestPaths(graph, 1000).getPaths(source, target);
         List<SubwayPath> subwayPaths = paths.stream().map(this::convertSubwayPath).collect(Collectors.toList());
 
@@ -48,7 +37,17 @@ public class PathService {
         return subwayPaths.get(0);
     }
 
+    private SubwayPath findPathWithoutTime(final List<Line> lines, final Long source,
+        final Long target,
+        final PathType type) {
+        SubwayGraphDijks graph = new SubwayGraphDijks(LineStationEdge.class, lines, type);
+        DijkstraShortestPath dijkstraShortestPath = new DijkstraShortestPath(graph);
+        GraphPath path = dijkstraShortestPath.getPath(source, target);
+
+        return convertSubwayPath(path);
+    }
+
     private SubwayPath convertSubwayPath(GraphPath graphPath) {
-        return new SubwayPath((List<LineStationEdge>) graphPath.getEdgeList().stream().collect(Collectors.toList()));
+        return new SubwayPath((List<LineStationEdge>)graphPath.getEdgeList().stream().collect(Collectors.toList()));
     }
 }

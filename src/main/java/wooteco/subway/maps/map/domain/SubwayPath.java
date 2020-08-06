@@ -3,6 +3,8 @@ package wooteco.subway.maps.map.domain;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.jgrapht.GraphPath;
+
 import com.google.common.collect.Lists;
 
 public class SubwayPath {
@@ -10,6 +12,10 @@ public class SubwayPath {
 
     public SubwayPath(List<LineStationEdge> lineStationEdges) {
         this.lineStationEdges = lineStationEdges;
+    }
+
+    public SubwayPath(GraphPath graphPath) {
+        this((List<LineStationEdge>)graphPath.getEdgeList().stream().collect(Collectors.toList()));
     }
 
     public List<LineStationEdge> getLineStationEdges() {
